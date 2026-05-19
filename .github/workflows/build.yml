@@ -1,0 +1,41 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build with buildozer Docker image
+        uses: addnab/docker-run-action@v3
+        with:
+          image: kivy/buildozer:latest
+          options: >-
+            --workdir /home/user/hostcwd
+            -v ${{ github.workspace }}:/home/user/hostcwd
+          run: |
+            # 自动帮它初始化配置（如果缺失的话）
+            if [ ! -f buildozer.spec ]; then
+              echo "buildozer.spec not found, generating standard one..."
+              buildozer init
+            fi
+            
+            # 清理历史缓存
+            buildozer android clean || true
+            
+            # 核心修正：加入 BUFFER 或者是允许 root 运行的参数
+            # 使用 yes 命令或者设置环境变量强制跳过提示
+            export BUILDOZER_ALLOW_KIVY_BUILD_FROM_ROOT=1
+            yes | buildozer -v android debug
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-apk
+          path: bin/*.apk

@@ -1,167 +1,136 @@
-from kivymd.app import MDApp
-from kivy.lang import Builder
-from kivy.core.window import Window
+import re
+from kivy.app import App
+from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.gridlayout import GridLayout
+from kivy.uix.label import Label
+from kivy.uix.textinput import TextInput
+from kivy.uix.button import Button
 from kivy.utils import platform
-from urllib.parse import urlparse
-import webbrowser
 
-KV = '''
-Screen:
-    MDBoxLayout:
-        orientation: 'vertical'
-        padding: dp(12)
-        spacing: dp(10)
-
-        MDToolbar:
-            title: "VIP 视频播放器"
-            md_bg_color: app.theme_cls.primary_color
-            elevation: 6
-
-        MDLabel:
-            text: "仅供学习交流使用，注意版权与合法性"
-            halign: "center"
-            theme_text_color: "Secondary"
-            font_style: "Caption"
-
-        MDTextField:
-            id: url_field
-            hint_text: "输入视频链接（http/https）"
-            size_hint_x: 1
-            pos_hint: {"center_x": .5}
-            multiline: False
-            on_text_validate: app.on_play()
-            helper_text_mode: "on_focus"
-
-        MDBoxLayout:
-            adaptive_height: True
-            spacing: dp(8)
-
-            MDDropDownItem:
-                id: parser_item
-                text: app.parsers[0]
-                pos_hint: {"center_y": .5}
-                on_release: app.open_parsers_menu(self)
-
-            MDRaisedButton:
-                text: "播放"
-                on_release: app.on_play()
-            MDFlatButton:
-                text: "清空"
-                on_release:
-                    url_field.text = ""
-                    app.show_message("已清空")
-
-        MDLabel:
-            id: info
-            text: ""
-            halign: "center"
-            theme_text_color: "Primary"
-            font_style: "Caption"
-
-        MDBoxLayout:
-            adaptive_height: True
-            spacing: dp(8)
-            padding: dp(6)
-
-            MDIconButton:
-                icon: "open-in-new"
-                on_release: app.open_raw()
-                tooltip_text: "打开原站"
-
-            MDIconButton:
-                icon: "cog-outline"
-                on_release: app.show_message("解析器在代码或配置中编辑")
-                tooltip_text: "设置解析器"
-'''
-
-from kivymd.uix.menu import MDDropdownMenu
-from kivymd.toast import toast
-
-class VIPApp(MDApp):
-    parsers = [
-        "https://jx.xmflv.cc/?url=",
-        "https://jx.618g.com/?v=",
-    ]
-
+class VIPPlayerApp(App):
     def build(self):
-        self.theme_cls.primary_palette = "Blue"
-        self.theme_cls.theme_style = "Light"
-        self.root = Builder.load_string(KV)
-        Window.softinput_mode = "below_target"
-        self._build_parsers_menu()
-        return self.root
-
-    def _build_parsers_menu(self):
-        items = []
-        for p in self.parsers:
-            items.append({
-                "viewclass": "OneLineListItem",
-                "text": p,
-                "on_release": lambda x=p: self.select_parser(x)
-            })
-        self.parsers_menu = MDDropdownMenu(
-            caller=self.root.ids.parser_item,
-            items=items,
-            width_mult=6
+        self.title = "VIP视频播放器"
+        
+        # 主布局（纵向排列）
+        main_layout = BoxLayout(orientation='vertical', padding=20, spacing=15)
+        
+        # 标题
+        title_label = Label(
+            text="[b]VIP视频播放器[/b]", 
+            markup=True, 
+            font_size='24sp', 
+            size_hint_y=None, 
+            height=50,
+            color=(0.2, 0.2, 0.2, 1)
         )
+        main_layout.add_widget(title_label)
+        
+        # 副标题
+        subtitle_label = Label(
+            text="支持大部分主流视频网站", 
+            font_size='14sp', 
+            size_hint_y=None, 
+            height=30,
+            color=(0.4, 0.4, 0.4, 1)
+        )
+        main_layout.add_widget(subtitle_label)
+        
+        # 输入框提示
+        tip_label = Label(
+            text="请输入或粘贴视频链接:", 
+            font_size='16sp', 
+            size_hint_y=None, 
+            height=30, 
+            halign='left', 
+            valign='middle',
+            color=(0.1, 0.1, 0.1, 1)
+        )
+        tip_label.bind(size=tip_label.setter('text_size'))
+        main_layout.add_widget(tip_label)
+        
+        # URL 输入框（适配手机触屏多行，高度调大）
+        self.url_input = TextInput(
+            hint_text="https://...", 
+            multiline=False, 
+            font_size='16sp', 
+            size_hint_y=None, 
+            height=50
+        )
+        main_layout.add_widget(self.url_input)
+        
+        # 动作按钮布局
+        btn_layout = BoxLayout(orientation='horizontal', spacing=15, size_hint_y=None, height=55)
+        
+        play_btn = Button(text="播放视频", background_color=(0.3, 0.7, 0.3, 1), font_size='16sp')
+        play_btn.bind(on_release=self.play_video)
+        
+        clear_btn = Button(text="清空链接", background_color=(0.9, 0.3, 0.3, 1), font_size='16sp')
+        clear_btn.bind(on_release=self.clear_url)
+        
+        btn_layout.add_widget(play_btn)
+        btn_layout.add_widget(clear_btn)
+        main_layout.add_widget(btn_layout)
+        
+        # 快捷导航标题
+        nav_label = Label(
+            text="快捷导航", 
+            font_size='16sp', 
+            size_hint_y=None, 
+            height=30, 
+            halign='left', 
+            valign='middle',
+            color=(0.1, 0.1, 0.1, 1)
+        )
+        nav_label.bind(size=nav_label.setter('text_size'))
+        main_layout.add_widget(nav_label)
+        
+        # 视频网站网格布局（手机每行放3个按钮最舒适）
+        grid_layout = GridLayout(cols=3, spacing=10, size_hint_y=1)
+        
+        websites = [
+            ("腾讯视频", "https://v.qq.com/"), ("爱奇艺", "https://www.iqiyi.com/"),
+            ("优酷", "https://www.youku.com/"), ("B站", "https://www.bilibili.com/"),
+            ("搜狐视频", "https://tv.sohu.com/"), ("乐视视频", "https://www.le.com/"),
+            ("PPTV", "https://www.pptv.com/"), ("土豆视频", "https://www.tudou.com/"),
+            ("暴风影音", "https://www.baofeng.com/"), ("咪咕视频", "https://www.miguvideo.com/"),
+            ("西瓜视频", "https://www.ixigua.com/")
+        ]
+        
+        for name, url in websites:
+            link_btn = Button(text=name, font_size='14sp', background_color=(0.8, 0.8, 0.8, 1))
+            link_btn.bind(on_release=lambda instance, u=url: self.open_browser(u))
+            grid_layout.add_widget(link_btn)
+            
+        main_layout.add_widget(grid_layout)
+        return main_layout
 
-    def open_parsers_menu(self, caller):
-        self.parsers_menu.caller = caller
-        self.parsers_menu.open()
-
-    def select_parser(self, parser_url):
-        self.root.ids.parser_item.set_item(parser_url)
-        self.parsers_menu.dismiss()
-
-    def is_valid_url(self, url: str) -> bool:
-        if not url:
-            return False
-        u = url.strip()
-        if not urlparse(u).scheme:
-            u = "http://" + u
-        p = urlparse(u)
-        return p.scheme in ("http", "https") and bool(p.netloc)
-
-    def normalized_url(self, url: str) -> str:
-        u = url.strip()
-        if not urlparse(u).scheme:
-            u = "http://" + u
-        return u
-
-    def on_play(self):
-        url = self.root.ids.url_field.text.strip()
-        if not url:
-            self.show_message("请输入视频链接")
-            return
-        if not self.is_valid_url(url):
-            self.show_message("无效链接，请检查（http/https）")
-            return
-        parser = self.root.ids.parser_item.text or self.parsers[0]
-        final = parser + self.normalized_url(url)
-        try:
-            # On Android consider using plyer or intent; webbrowser often works
-            webbrowser.open(final)
-            self.show_message("已打开解析链接")
-        except Exception as e:
-            self.show_message(f"打开失败: {e}")
-
-    def open_raw(self):
-        url = self.root.ids.url_field.text.strip()
-        if not self.is_valid_url(url):
-            self.show_message("无效链接")
-            return
-        try:
-            webbrowser.open(self.normalized_url(url))
-            self.show_message("已打开原站链接")
-        except Exception as e:
-            self.show_message(f"打开失败: {e}")
-
-    def show_message(self, text: str):
-        # 使用 toast 在移动端体验更好
-        if platform == "android" or platform == "ios":
-            toast(text)
+    def open_browser(self, url):
+        """兼容安卓底层的浏览器调用"""
+        if platform == 'android':
+            from jnius import autoclass
+            PythonActivity = autoclass('org.kivy.android.PythonActivity')
+            activity = PythonActivity.mActivity
+            Intent = autoclass('android.content.Intent')
+            Uri = autoclass('android.net.Uri')
+            intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+            activity.startActivity(intent)
         else:
-            self.root.ids.info.text = text
+            import webbrowser
+            webbrowser.open(url)
+
+    def play_video(self, instance):
+        video_url = self.url_input.text.strip()
+        # 简单验证
+        if not video_url.startswith(('http://', 'https://')):
+            self.url_input.text = ""
+            self.url_input.hint_text = "请输入有效的http/https链接！"
+            return
+            
+        parser_url = f"https://jx.xmflv.cc/?url={video_url}"
+        self.open_browser(parser_url)
+
+    def clear_url(self, instance):
+        self.url_input.text = ""
 
 if __name__ == '__main__':
-    VIPApp().run()
+    VIPPlayerApp().run()
