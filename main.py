@@ -1,136 +1,277 @@
 import re
-from kivy.app import App
-from kivy.uix.boxlayout import BoxLayout
-from kivy.uix.gridlayout import GridLayout
-from kivy.uix.label import Label
-from kivy.uix.textinput import TextInput
-from kivy.uix.button import Button
+from kivy.lang import Builder
+from kivy.core.window import Window
 from kivy.utils import platform
+from urllib.parse import urlparse
 
-class VIPPlayerApp(App):
+from kivymd.app import MDApp
+from kivymd.uix.menu import MDDropdownMenu
+from kivymd.toast import toast
+
+# ⚡ 终极高颜值 UI 布局设计（纯正 Material Design 3 现代风格）
+KV = '''
+MDScreenManager:
+    id: screen_manager
+    
+    MDScreen:
+        name: "main_screen"
+        md_bg_color: [0.95, 0.96, 0.98, 1]  # 高级柔和护眼灰背景
+
+        MDBoxLayout:
+            orientation: 'vertical'
+            spacing: 0
+
+            MDTopAppBar:
+                title: "VIP 视频聚合解析"
+                anchor_title: "center"
+                font_name: "Roboto"
+                md_bg_color: app.theme_cls.primary_color
+                elevation: 4
+
+            MDBoxLayout:
+                orientation: 'vertical'
+                padding: [dp(16), dp(16), dp(16), dp(16)]
+                spacing: dp(18)
+
+                # 💡 史诗级优化：大厂风格的圆角白色搜索卡片
+                MDCard:
+                    orientation: 'vertical'
+                    padding: [dp(16), dp(16), dp(16), dp(12)]
+                    spacing: dp(12)
+                    adaptive_height: True
+                    radius: [dp(16), ]
+                    elevation: 2
+                    md_bg_color: [1, 1, 1, 1]
+
+                    MDBoxLayout:
+                        orientation: 'horizontal'
+                        spacing: dp(10)
+                        adaptive_height: True
+
+                        MDIcon:
+                            icon: "magnify"  # 放大镜搜索图标
+                            pos_hint: {"center_y": .5}
+                            theme_text_color: "Hint"
+
+                        MDTextField:
+                            id: url_field
+                            hint_text: "请在此输入或粘贴视频网址..."
+                            font_name: "Roboto"
+                            mode: "line"  # 现代极简下划线模式
+                            multiline: False
+                            pos_hint: {"center_y": .5}
+                            on_text_validate: app.on_play()
+
+                    MDBoxLayout:
+                        orientation: 'horizontal'
+                        adaptive_height: True
+                        spacing: dp(12)
+                        padding: [0, dp(6), 0, 0]
+
+                        MDDropDownItem:
+                            id: parser_item
+                            text: "选择解析接口"
+                            font_name: "Roboto"
+                            pos_hint: {"center_y": .5}
+                            on_release: app.open_parsers_menu(self)
+
+                        Widget: # 弹簧组件，将动作按钮完美推向右侧
+
+                        MDFlatButton:
+                            text: "清空"
+                            font_name: "Roboto"
+                            theme_text_color: "Error"
+                            pos_hint: {"center_y": .5}
+                            on_release:
+                                url_field.text = ""
+                                app.show_message("已清空")
+
+                        MDRaisedButton:
+                            text: "立即播放"
+                            font_name: "Roboto"
+                            pos_hint: {"center_y": .5}
+                            elevation: 3
+                            on_release: app.on_play()
+
+                # 常用网站直达标签
+                MDLabel:
+                    text: "常用视频网站直达"
+                    font_name: "Roboto"
+                    font_style: "Subtitle1"
+                    bold: True
+                    theme_text_color: "Primary"
+                    size_hint_y: None
+                    height: dp(28)
+
+                # 响应式舒适滚动网格（彻底解决越界与拥挤）
+                ScrollView:
+                    do_scroll_x: False
+                    do_scroll_y: True
+                    bar_width: dp(4)
+                    
+                    MDGridLayout:
+                        id: grid_layout
+                        cols: 3
+                        spacing: dp(12)
+                        adaptive_height: True
+                        padding: [0, 0, 0, dp(20)]
+
+    MDScreen:
+        name: "player_screen"
+        md_bg_color: [0, 0, 0, 1]  # 沉浸式全黑播放背景
+        MDBoxLayout:
+            id: webview_container
+            orientation: 'vertical'
+'''
+
+class VIPApp(MDApp):
+    parsers = [
+        "https://jx.xmflv.cc/?url=",
+        "https://jx.618g.com/?v=",
+    ]
+    webview = None
+
     def build(self):
-        self.title = "VIP视频播放器"
+        self.theme_cls.primary_palette = "Indigo"  # 使用高质感的靛蓝色作为UI主色调
+        self.theme_cls.theme_style = "Light"
+        self.root = Builder.load_string(KV)
+        Window.softinput_mode = "below_target"
         
-        # 主布局（纵向排列）
-        main_layout = BoxLayout(orientation='vertical', padding=20, spacing=15)
+        # 绑定手机物理返回键 / 边缘右滑返回手势
+        Window.bind(on_keyboard=self.handle_back_key)
         
-        # 标题
-        title_label = Label(
-            text="[b]VIP视频播放器[/b]", 
-            markup=True, 
-            font_size='24sp', 
-            size_hint_y=None, 
-            height=50,
-            color=(0.2, 0.2, 0.2, 1)
-        )
-        main_layout.add_widget(title_label)
-        
-        # 副标题
-        subtitle_label = Label(
-            text="支持大部分主流视频网站", 
-            font_size='14sp', 
-            size_hint_y=None, 
-            height=30,
-            color=(0.4, 0.4, 0.4, 1)
-        )
-        main_layout.add_widget(subtitle_label)
-        
-        # 输入框提示
-        tip_label = Label(
-            text="请输入或粘贴视频链接:", 
-            font_size='16sp', 
-            size_hint_y=None, 
-            height=30, 
-            halign='left', 
-            valign='middle',
-            color=(0.1, 0.1, 0.1, 1)
-        )
-        tip_label.bind(size=tip_label.setter('text_size'))
-        main_layout.add_widget(tip_label)
-        
-        # URL 输入框（适配手机触屏多行，高度调大）
-        self.url_input = TextInput(
-            hint_text="https://...", 
-            multiline=False, 
-            font_size='16sp', 
-            size_hint_y=None, 
-            height=50
-        )
-        main_layout.add_widget(self.url_input)
-        
-        # 动作按钮布局
-        btn_layout = BoxLayout(orientation='horizontal', spacing=15, size_hint_y=None, height=55)
-        
-        play_btn = Button(text="播放视频", background_color=(0.3, 0.7, 0.3, 1), font_size='16sp')
-        play_btn.bind(on_release=self.play_video)
-        
-        clear_btn = Button(text="清空链接", background_color=(0.9, 0.3, 0.3, 1), font_size='16sp')
-        clear_btn.bind(on_release=self.clear_url)
-        
-        btn_layout.add_widget(play_btn)
-        btn_layout.add_widget(clear_btn)
-        main_layout.add_widget(btn_layout)
-        
-        # 快捷导航标题
-        nav_label = Label(
-            text="快捷导航", 
-            font_size='16sp', 
-            size_hint_y=None, 
-            height=30, 
-            halign='left', 
-            valign='middle',
-            color=(0.1, 0.1, 0.1, 1)
-        )
-        nav_label.bind(size=nav_label.setter('text_size'))
-        main_layout.add_widget(nav_label)
-        
-        # 视频网站网格布局（手机每行放3个按钮最舒适）
-        grid_layout = GridLayout(cols=3, spacing=10, size_hint_y=1)
+        # 初始化默认解析接口
+        self.root.ids.parser_item.text = self.parsers[0]
+        return self.root
+
+    def on_start(self):
+        """在App启动的第一时间注入中文字体，完美阻击豆腐块乱码Bug"""
+        if platform == "android":
+            from kivy.core.text import LabelBase
+            import os
+            font_path = "/system/fonts/NotoSansCJK-Regular.ttc"
+            if not os.path.exists(font_path):
+                font_path = "/system/fonts/DroidSansFallback.ttf"
+            
+            # 强制将系统的中文字体全局绑定到库的渲染内核上
+            LabelBase.register(name="Roboto", fn_regular=font_path)
+            LabelBase.register(name="OneLineListItem", fn_regular=font_path)
+            
+        # 字体加载完毕后再开始画按钮网格，确保中文100%显示正常
+        self.build_website_grid()
+
+    def build_website_grid(self):
+        """动态构建精美响应式卡片网格，完美修复原先173行的冒号爆红Bug"""
+        from kivymd.uix.button import MDRaisedButton
         
         websites = [
             ("腾讯视频", "https://v.qq.com/"), ("爱奇艺", "https://www.iqiyi.com/"),
-            ("优酷", "https://www.youku.com/"), ("B站", "https://www.bilibili.com/"),
+            ("优酷视频", "https://www.youku.com/"), ("哔哩哔哩", "https://www.bilibili.com/"),
             ("搜狐视频", "https://tv.sohu.com/"), ("乐视视频", "https://www.le.com/"),
-            ("PPTV", "https://www.pptv.com/"), ("土豆视频", "https://www.tudou.com/"),
-            ("暴风影音", "https://www.baofeng.com/"), ("咪咕视频", "https://www.miguvideo.com/"),
-            ("西瓜视频", "https://www.ixigua.com/")
+            ("PPTV", "https://www.pptv.com/"), ("芒果TV", "https://www.mgtv.com/"),
+            ("咪咕视频", "https://www.miguvideo.com/"), ("西瓜视频", "https://www.ixigua.com/")
         ]
         
         for name, url in websites:
-            link_btn = Button(text=name, font_size='14sp', background_color=(0.8, 0.8, 0.8, 1))
-            link_btn.bind(on_release=lambda instance, u=url: self.open_browser(u))
-            grid_layout.add_widget(link_btn)
-            
-        main_layout.add_widget(grid_layout)
-        return main_layout
+            # 💡 完美修复：将原先错误的 elevation: 1 改为正确的赋值等号 elevation=1
+            btn = MDRaisedButton(
+                text=name,
+                font_name="Roboto",
+                size_hint_x=1,
+                height=dp(48),
+                md_bg_color=[1, 1, 1, 1],         # 卡片纯白底色
+                text_color=[0.2, 0.2, 0.2, 1],     # 高级深灰文字
+                elevation=1                        # 正确的Python语法！
+            )
+            btn.bind(on_release=lambda instance, u=url: self.open_in_webview(u))
+            self.root.ids.grid_layout.add_widget(btn)
 
-    def open_browser(self, url):
-        """兼容安卓底层的浏览器调用"""
-        if platform == 'android':
-            from jnius import autoclass
-            PythonActivity = autoclass('org.kivy.android.PythonActivity')
-            activity = PythonActivity.mActivity
-            Intent = autoclass('android.content.Intent')
-            Uri = autoclass('android.net.Uri')
-            intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-            activity.startActivity(intent)
-        else:
-            import webbrowser
-            webbrowser.open(url)
+    def open_parsers_menu(self, caller):
+        items = []
+        for p in self.parsers:
+            items.append({
+                "viewclass": "OneLineListItem",
+                "text": p,
+                "font_name": "Roboto",
+                "on_release": lambda x=p: self.select_parser(x)
+            })
+        self.parsers_menu = MDDropdownMenu(caller=caller, items=items, width_mult=6)
+        self.parsers_menu.open()
 
-    def play_video(self, instance):
-        video_url = self.url_input.text.strip()
-        # 简单验证
-        if not video_url.startswith(('http://', 'https://')):
-            self.url_input.text = ""
-            self.url_input.hint_text = "请输入有效的http/https链接！"
+    def select_parser(self, parser_url):
+        self.root.ids.parser_item.text = parser_url
+        self.parsers_menu.dismiss()
+
+    def is_valid_url(self, url: str) -> bool:
+        if not url: return False
+        u = url.strip()
+        if not urlparse(u).scheme: u = "http://" + u
+        p = urlparse(u)
+        return p.scheme in ("http", "https") and bool(p.netloc)
+
+    def on_play(self):
+        url = self.root.ids.url_field.text.strip()
+        if not url:
+            self.show_message("请输入视频链接")
+            return
+        if not self.is_valid_url(url):
+            self.show_message("无效链接，请检查")
             return
             
-        parser_url = f"https://jx.xmflv.cc/?url={video_url}"
-        self.open_browser(parser_url)
+        parser = self.root.ids.parser_item.text
+        if parser == "选择解析接口": parser = self.parsers[0]
+        final_url = parser + url.strip()
+        
+        if platform == 'android':
+            self.open_in_webview(final_url)
+        else:
+            import webbrowser
+            webbrowser.open(final_url)
 
-    def clear_url(self, instance):
-        self.url_input.text = ""
+    def open_in_webview(self, url):
+        """基于 Android 原生高级 WebView 组件的内嵌全屏播放机制"""
+        from jnius import autoclass
+        from android.runnable import run_on_ui_thread
+
+        PythonActivity = autoclass('org.kivy.android.PythonActivity')
+        WebView = autoclass('android.webkit.WebView')
+        WebViewClient = autoclass('android.webkit.WebViewClient')
+        activity = PythonActivity.mActivity
+
+        @run_on_ui_thread
+        def create_webview():
+            if not self.webview:
+                self.webview = WebView(activity)
+                self.webview.getSettings().setJavaScriptEnabled(True)
+                self.webview.getSettings().setDomStorageEnabled(True)
+                self.webview.getSettings().setMediaPlaybackRequiresUserGesture(False)
+                self.webview.setWebViewClient(WebViewClient())
+                
+                from uix_android import AndroidWidget
+                kw = AndroidWidget(self.webview)
+                self.root.ids.webview_container.add_widget(kw)
+            
+            self.webview.loadUrl(url)
+            self.root.current = "player_screen"
+
+        create_webview()
+
+    def handle_back_key(self, window, key, *args):
+        """【高级手势右滑返回 / 手机物理返回键退回机制】"""
+        if key == 27:  # 27 对应安卓系统的全局返回手势
+            if self.root.current == "player_screen":
+                self.root.current = "main_screen"
+                if self.webview:
+                    self.webview.loadUrl("about:blank")  # 切断网页防止后台偷跑声音Bug
+                self.show_message("已退出播放")
+                return True
+        return False
+
+    def show_message(self, text: str):
+        if platform == "android":
+            toast(text)
+        else:
+            self.root.ids.info.text = text
 
 if __name__ == '__main__':
-    VIPPlayerApp().run()
+    VIPApp().run()
