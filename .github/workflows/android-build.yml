@@ -34,10 +34,18 @@ jobs:
         env:
           PATH: ${{ github.workspace }}:$HOME/.local/bin:$PATH
         run: |
-          buildozer android debug >/tmp/buildozer.log 2>&1 || { python3 - <<'PY'
-          print(open('/tmp/buildozer.log','rb').read().decode(errors='replace'))
+          buildozer android debug >/tmp/buildozer.log 2>&1 || { 
+          PYTHON_BIN=$(/usr/bin/env python3 || /usr/bin/env python || true); 
+          if [ -n "$PYTHON_BIN" ]; then 
+            $PYTHON_BIN - <<'PY'; 
+          import sys,io
+          print(open('/tmp/buildozer.log','rb').read().decode(errors='replace')) 
           PY
-          exit 1; }
+            else 
+              echo "No python available to dump log. Showing file head:"; head -n 200 /tmp/buildozer.log || true; 
+            fi; 
+            exit 1; 
+          }
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
