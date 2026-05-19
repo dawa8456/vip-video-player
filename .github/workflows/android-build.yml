@@ -1,0 +1,43 @@
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+          - name: Setup JDK
+    uses: actions/setup-java@v4
+    with:
+      distribution: 'temurin'
+      java-version: '17'
+
+  - name: Install dependencies
+    run: |
+      sudo apt-get update
+      sudo apt-get install -y python3-pip zip unzip openjdk-17-jdk
+      python3 -m pip install --upgrade pip
+
+  - name: Install buildozer
+    run: |
+      python3 -m pip install --user buildozer==1.4.6
+      export PATH="$HOME/.local/bin:$PATH"
+      buildozer --version
+
+  - name: Build APK (debug)
+    env:
+      PATH: ${{ github.workspace }}:$HOME/.local/bin:$PATH
+    run: |
+      export PATH="$HOME/.local/bin:$PATH"
+      if [ ! -f buildozer.spec ]; then echo "buildozer.spec not found"; exit 1; fi
+      buildozer android debug >/tmp/buildozer.log 2>&1 || (tail -n 200 /tmp/buildozer.log && exit 1)
+      ls -la bin || true
+
+  - name: Upload APK artifact
+    uses: actions/upload-artifact@v4
+    with:
+      name: app-apk
+      path: bin/*.apk

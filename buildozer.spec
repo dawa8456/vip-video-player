@@ -1,0 +1,1 @@
+[app] title = VIPVideoPlayer package.name = vipvideoplayer package.domain = org.example source.include_exts = py,kv,png,jpg version = 0.1 requirements = python3,kivy,kivymd,requests,plyer android.permissions = INTERNET android.arch = armeabi-v7a,arm64-v8a orientation = portrait
