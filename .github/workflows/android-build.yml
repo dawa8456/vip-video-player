@@ -9,43 +9,23 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup JDK
-        uses: actions/setup-java@v4
+      - name: Build with buildozer Docker image
+        uses: addnab/docker-run-action@v3
         with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y python3-pip zip unzip openjdk-17-jdk build-essential ccache coreutils
-          python3 -m pip install --upgrade pip setuptools wheel
-
-      - name: Install buildozer
-        run: |
-          python3 -m pip install --user buildozer==1.6.0
-          export PATH="$HOME/.local/bin:$PATH"
-          buildozer --version
-
-      - name: Build APK (debug)
-        env:
-          PATH: ${{ github.workspace }}:$HOME/.local/bin:$PATH
-        run: |
-          buildozer android debug >/tmp/buildozer.log 2>&1 || { 
-          PYTHON_BIN=$(/usr/bin/env python3 || /usr/bin/env python || true); 
-          if [ -n "$PYTHON_BIN" ]; then 
-            $PYTHON_BIN - <<'PY'; 
-          import sys,io
-          print(open('/tmp/buildozer.log','rb').read().decode(errors='replace')) 
-          PY
-            else 
-              echo "No python available to dump log. Showing file head:"; head -n 200 /tmp/buildozer.log || true; 
-            fi; 
-            exit 1; 
-          }
+          image: kivy/buildozer:latest
+          options: >-
+            --workdir /home/user/hostcwd
+            -v ${{ github.workspace }}:/home/user/hostcwd
+          run: |
+            if [ ! -f buildozer.spec ]; then
+              echo "buildozer.spec not found, generating standard one..."
+              buildozer init
+            fi
+            buildozer android clean || true
+            buildozer -v android debug
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
