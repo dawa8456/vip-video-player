@@ -7,7 +7,7 @@ source.include_exts = py,png,jpg,kv,atlas
 version = 1.0
 
 # 核心依赖：必须包含 kivy 和用来调安卓底层接口的 pyjnius
-requirements = python3,kivy==2.3.0,pyjnius
+requirements = python3,kivy,kivymd,pyjnius,pillow
 
 orientation = portrait
 osx.kivy_version = 2.3.0
