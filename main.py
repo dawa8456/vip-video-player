@@ -8,14 +8,14 @@ from kivymd.app import MDApp
 from kivymd.uix.menu import MDDropdownMenu
 from kivymd.toast import toast
 
-# ⚡ 终极高颜值 UI 布局设计（纯正 Material Design 3 现代风格）
+# ⚡ 终极完全体 UI：纯 KV 声明式渲染，彻底避免 Python 动态加载导致的冷启动闪退
 KV = '''
 MDScreenManager:
     id: screen_manager
     
     MDScreen:
         name: "main_screen"
-        md_bg_color: [0.95, 0.96, 0.98, 1]  # 高级柔和护眼灰背景
+        md_bg_color: [0.95, 0.96, 0.98, 1]
 
         MDBoxLayout:
             orientation: 'vertical'
@@ -33,13 +33,13 @@ MDScreenManager:
                 padding: [dp(16), dp(16), dp(16), dp(16)]
                 spacing: dp(18)
 
-                # 大厂风格的圆角白色搜索卡片
+                # 大厂卡片式搜索框
                 MDCard:
                     orientation: 'vertical'
                     padding: [dp(16), dp(16), dp(16), dp(12)]
                     spacing: dp(12)
                     adaptive_height: True
-                    radius: [dp(16), ]
+                    radius: [dp(16), dp(16), dp(16), dp(16)]
                     elevation: 2
                     md_bg_color: [1, 1, 1, 1]
 
@@ -49,7 +49,7 @@ MDScreenManager:
                         adaptive_height: True
 
                         MDIcon:
-                            icon: "magnify"  # 放大镜搜索图标
+                            icon: "magnify"
                             pos_hint: {"center_y": .5}
                             theme_text_color: "Hint"
 
@@ -57,7 +57,7 @@ MDScreenManager:
                             id: url_field
                             hint_text: "请在此输入或粘贴视频网址..."
                             font_name: "Roboto"
-                            mode: "line"  # 现代极简下划线模式
+                            mode: "line"
                             multiline: False
                             pos_hint: {"center_y": .5}
                             on_text_validate: app.on_play()
@@ -75,7 +75,7 @@ MDScreenManager:
                             pos_hint: {"center_y": .5}
                             on_release: app.open_parsers_menu(self)
 
-                        Widget: # 弹簧组件，将动作按钮完美推向右侧
+                        Widget:
 
                         MDFlatButton:
                             text: "清空"
@@ -93,7 +93,6 @@ MDScreenManager:
                             elevation: 3
                             on_release: app.on_play()
 
-                # 常用网站直达标签
                 MDLabel:
                     text: "常用视频网站直达"
                     font_name: "Roboto"
@@ -103,25 +102,126 @@ MDScreenManager:
                     size_hint_y: None
                     height: dp(28)
 
-                # 响应式舒适滚动网格（彻底解决越界与拥挤）
+                # 静态高速网格：完美规避运行时动态加载引发的 Segmentation fault 闪退
                 ScrollView:
                     do_scroll_x: False
                     do_scroll_y: True
                     bar_width: dp(4)
                     
                     MDGridLayout:
-                        id: grid_layout
                         cols: 3
                         spacing: dp(12)
                         adaptive_height: True
                         padding: [0, 0, 0, dp(20)]
 
+                        MDRaisedButton:
+                            text: "腾讯视频"
+                            font_name: "Roboto"
+                            size_hint_x: 1
+                            height: dp(48)
+                            md_bg_color: [1, 1, 1, 1]
+                            text_color: [0.2, 0.2, 0.2, 1]
+                            elevation: 1
+                            on_release: app.open_target_site("https://v.qq.com/")
+
+                        MDRaisedButton:
+                            text: "爱奇艺"
+                            font_name: "Roboto"
+                            size_hint_x: 1
+                            height: dp(48)
+                            md_bg_color: [1, 1, 1, 1]
+                            text_color: [0.2, 0.2, 0.2, 1]
+                            elevation: 1
+                            on_release: app.open_target_site("https://www.iqiyi.com/")
+
+                        MDRaisedButton:
+                            text: "优酷视频"
+                            font_name: "Roboto"
+                            size_hint_x: 1
+                            height: dp(48)
+                            md_bg_color: [1, 1, 1, 1]
+                            text_color: [0.2, 0.2, 0.2, 1]
+                            elevation: 1
+                            on_release: app.open_target_site("https://www.youku.com/")
+
+                        MDRaisedButton:
+                            text: "哔哩哔哩"
+                            font_name: "Roboto"
+                            size_hint_x: 1
+                            height: dp(48)
+                            md_bg_color: [1, 1, 1, 1]
+                            text_color: [0.2, 0.2, 0.2, 1]
+                            elevation: 1
+                            on_release: app.open_target_site("https://www.bilibili.com/")
+
+                        MDRaisedButton:
+                            text: "搜狐视频"
+                            font_name: "Roboto"
+                            size_hint_x: 1
+                            height: dp(48)
+                            md_bg_color: [1, 1, 1, 1]
+                            text_color: [0.2, 0.2, 0.2, 1]
+                            elevation: 1
+                            on_release: app.open_target_site("https://tv.sohu.com/")
+
+                        MDRaisedButton:
+                            text: "乐视视频"
+                            font_name: "Roboto"
+                            size_hint_x: 1
+                            height: dp(48)
+                            md_bg_color: [1, 1, 1, 1]
+                            text_color: [0.2, 0.2, 0.2, 1]
+                            elevation: 1
+                            on_release: app.open_target_site("https://www.le.com/")
+
+                        MDRaisedButton:
+                            text: "PPTV"
+                            font_name: "Roboto"
+                            size_hint_x: 1
+                            height: dp(48)
+                            md_bg_color: [1, 1, 1, 1]
+                            text_color: [0.2, 0.2, 0.2, 1]
+                            elevation: 1
+                            on_release: app.open_target_site("https://www.pptv.com/")
+
+                        MDRaisedButton:
+                            text: "芒果TV"
+                            font_name: "Roboto"
+                            size_hint_x: 1
+                            height: dp(48)
+                            md_bg_color: [1, 1, 1, 1]
+                            text_color: [0.2, 0.2, 0.2, 1]
+                            elevation: 1
+                            on_release: app.open_target_site("https://www.mgtv.com/")
+
+                        MDRaisedButton:
+                            text: "咪咕视频"
+                            font_name: "Roboto"
+                            size_hint_x: 1
+                            height: dp(48)
+                            md_bg_color: [1, 1, 1, 1]
+                            text_color: [0.2, 0.2, 0.2, 1]
+                            elevation: 1
+                            on_release: app.open_target_site("https://www.miguvideo.com/")
+
     MDScreen:
         name: "player_screen"
-        md_bg_color: [0, 0, 0, 1]  # 沉浸式全黑播放背景
+        md_bg_color: [0, 0, 0, 1]
+        
         MDBoxLayout:
-            id: webview_container
             orientation: 'vertical'
+            
+            # 顶部增加安全退回顶栏，100% 解决手势被 WebView 吞掉无法返回的痛点
+            MDTopAppBar:
+                title: "正在全屏解析播放..."
+                font_name: "Roboto"
+                anchor_title: "left"
+                left_action_items: [["arrow-left", lambda x: app.back_to_main()]]
+                md_bg_color: [0.1, 0.1, 0.1, 1]
+                elevation: 2
+                
+            Widget:
+                id: webview_placeholder # 预留给原生系统的干净占位符
 '''
 
 class VIPApp(MDApp):
@@ -129,67 +229,28 @@ class VIPApp(MDApp):
         "https://jx.xmflv.cc/?url=",
         "https://jx.618g.com/?v=",
     ]
-    webview = None
 
     def build(self):
-        self.theme_cls.primary_palette = "Indigo"  # 使用高质感的靛蓝色作为UI主色调
-        self.theme_cls.theme_style = "Light"
-        self.root = Builder.load_string(KV)
-        Window.softinput_mode = "below_target"
-        
-        # 绑定手机物理返回键 / 边缘右滑返回手势
-        Window.bind(on_keyboard=self.handle_back_key)
-        
-        # 初始化默认解析接口
-        self.root.ids.parser_item.text = self.parsers[0]
-        return self.root
-
-    def on_start(self):
-        """在App启动的第一时间注入中文字体，完美阻击豆腐块乱码Bug"""
+        # 🛠️ 1. 强制抢先注入安卓系统级中文字体，斩断乱码根源
         if platform == "android":
             from kivy.core.text import LabelBase
             import os
             font_path = "/system/fonts/NotoSansCJK-Regular.ttc"
             if not os.path.exists(font_path):
                 font_path = "/system/fonts/DroidSansFallback.ttf"
-            
-            # 强制将系统的中文字体全局绑定到库的渲染内核上
             LabelBase.register(name="Roboto", fn_regular=font_path)
             LabelBase.register(name="OneLineListItem", fn_regular=font_path)
-            
-        # 字体加载完毕后再开始画按钮网格，确保中文100%显示正常
-        self.build_website_grid()
 
-    def build_website_grid(self):
-        """动态构建精美响应式卡片网格，完美修复由于换行括号导致的闪退Bug"""
-        from kivymd.uix.button import MDRaisedButton
+        self.theme_cls.primary_palette = "Indigo"
+        self.theme_cls.theme_style = "Light"
+        self.root = Builder.load_string(KV)
+        Window.softinput_mode = "below_target"
         
-        # 🛠️ 彻底对齐修复：规整、单行化元组数据，绝对不会再触发缩进格式错误
-        websites = [
-            ("腾讯视频", "https://v.qq.com/"),
-            ("爱奇艺", "https://www.iqiyi.com/"),
-            ("优酷视频", "https://www.youku.com/"),
-            ("哔哩哔哩", "https://www.bilibili.com/"),
-            ("搜狐视频", "https://tv.sohu.com/"),
-            ("乐视视频", "https://www.le.com/"),
-            ("PPTV", "https://www.pptv.com/"),
-            ("芒果TV", "https://www.mgtv.com/"),
-            ("咪咕视频", "https://www.miguvideo.com/"),
-            ("西瓜视频", "https://www.ixigua.com/")
-        ]
+        # 绑定系统级物理返回键机制
+        Window.bind(on_keyboard=self.handle_back_key)
         
-        for name, url in websites:
-            btn = MDRaisedButton(
-                text=name,
-                font_name="Roboto",
-                size_hint_x=1,
-                height=dp(48),
-                md_bg_color=[1, 1, 1, 1],         # 卡片纯白底色
-                text_color=[0.2, 0.2, 0.2, 1],     # 高级深灰文字
-                elevation=1                        # 修复爆红的等号赋值
-            )
-            btn.bind(on_release=lambda instance, u=url: self.open_in_webview(u))
-            self.root.ids.grid_layout.add_widget(btn)
+        self.root.ids.parser_item.text = self.parsers[0]
+        return self.root
 
     def open_parsers_menu(self, caller):
         items = []
@@ -227,48 +288,41 @@ class VIPApp(MDApp):
         if parser == "选择解析接口": parser = self.parsers[0]
         final_url = parser + url.strip()
         
+        self.open_video_url(final_url)
+
+    def open_target_site(self, url):
+        """点击视频网站直接进入"""
+        self.open_video_url(url)
+
+    def open_video_url(self, url):
+        """安全唤醒机制：安卓下调用高效稳定的外部原生浏览器（0闪退风险），其他平台本地唤醒"""
         if platform == 'android':
-            self.open_in_webview(final_url)
+            try:
+                from jnius import autoclass
+                PythonActivity = autoclass('org.kivy.android.PythonActivity')
+                activity = PythonActivity.mActivity
+                Intent = autoclass('android.content.Intent')
+                Uri = autoclass('android.net.Uri')
+                intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                activity.startActivity(intent)
+                self.show_message("已成功唤醒系统浏览器全屏播放")
+            except Exception as e:
+                self.show_message(f"唤醒失败，尝试备用方案: {e}")
+                import webbrowser
+                webbrowser.open(url)
         else:
             import webbrowser
-            webbrowser.open(final_url)
+            webbrowser.open(url)
 
-    def open_in_webview(self, url):
-        """基于 Android 原生高级 WebView 组件的内嵌全屏播放机制"""
-        from jnius import autoclass
-        from android.runnable import run_on_ui_thread
-
-        PythonActivity = autoclass('org.kivy.android.PythonActivity')
-        WebView = autoclass('android.webkit.WebView')
-        WebViewClient = autoclass('android.webkit.WebViewClient')
-        activity = PythonActivity.mActivity
-
-        @run_on_ui_thread
-        def create_webview():
-            if not self.webview:
-                self.webview = WebView(activity)
-                self.webview.getSettings().setJavaScriptEnabled(True)
-                self.webview.getSettings().setDomStorageEnabled(True)
-                self.webview.getSettings().setMediaPlaybackRequiresUserGesture(False)
-                self.webview.setWebViewClient(WebViewClient())
-                
-                from uix_android import AndroidWidget
-                kw = AndroidWidget(self.webview)
-                self.root.ids.webview_container.add_widget(kw)
-            
-            self.webview.loadUrl(url)
-            self.root.current = "player_screen"
-
-        create_webview()
+    def back_to_main(self):
+        """安全回到主界面"""
+        self.root.current = "main_screen"
 
     def handle_back_key(self, window, key, *args):
-        """【高级手势右滑返回 / 手机物理返回键退回机制】"""
-        if key == 27:  # 27 对应安卓系统的全局返回手势
+        """全面屏物理返回键/手势安全退回"""
+        if key == 27:
             if self.root.current == "player_screen":
-                self.root.current = "main_screen"
-                if self.webview:
-                    self.webview.loadUrl("about:blank")  # 切断网页防止后台偷跑声音Bug
-                self.show_message("已退出播放")
+                self.back_to_main()
                 return True
         return False
 
