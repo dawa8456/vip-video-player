@@ -34,10 +34,10 @@ jobs:
         env:
           PATH: ${{ github.workspace }}:$HOME/.local/bin:$PATH
         run: |
-          buildozer android debug >/tmp/buildozer.log 2>&1 || (python3 - <<'PY'
+          buildozer android debug >/tmp/buildozer.log 2>&1 || { python3 - <<'PY'
           print(open('/tmp/buildozer.log','rb').read().decode(errors='replace'))
           PY
-          && exit 1)
+          exit 1; }
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
