@@ -26,7 +26,7 @@ jobs:
 
       - name: Install buildozer
         run: |
-          python3 -m pip install --user buildozer==1.4.6
+          python3 -m pip install --user buildozer==1.6.0
           export PATH="$HOME/.local/bin:$PATH"
           buildozer --version
 
