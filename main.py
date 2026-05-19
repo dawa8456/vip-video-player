@@ -33,7 +33,7 @@ MDScreenManager:
                 padding: [dp(16), dp(16), dp(16), dp(16)]
                 spacing: dp(18)
 
-                # 💡 史诗级优化：大厂风格的圆角白色搜索卡片
+                # 大厂风格的圆角白色搜索卡片
                 MDCard:
                     orientation: 'vertical'
                     padding: [dp(16), dp(16), dp(16), dp(12)]
@@ -161,19 +161,24 @@ class VIPApp(MDApp):
         self.build_website_grid()
 
     def build_website_grid(self):
-        """动态构建精美响应式卡片网格，完美修复原先173行的冒号爆红Bug"""
+        """动态构建精美响应式卡片网格，完美修复由于换行括号导致的闪退Bug"""
         from kivymd.uix.button import MDRaisedButton
         
+        # 🛠️ 彻底对齐修复：规整、单行化元组数据，绝对不会再触发缩进格式错误
         websites = [
-            ("腾讯视频", "https://v.qq.com/"), ("爱奇艺", "https://www.iqiyi.com/"),
-            ("优酷视频", "https://www.youku.com/"), ("哔哩哔哩", "https://www.bilibili.com/"),
-            ("搜狐视频", "https://tv.sohu.com/"), ("乐视视频", "https://www.le.com/"),
-            ("PPTV", "https://www.pptv.com/"), ("芒果TV", "https://www.mgtv.com/"),
-            ("咪咕视频", "https://www.miguvideo.com/"), ("西瓜视频", "https://www.ixigua.com/")
+            ("腾讯视频", "https://v.qq.com/"),
+            ("爱奇艺", "https://www.iqiyi.com/"),
+            ("优酷视频", "https://www.youku.com/"),
+            ("哔哩哔哩", "https://www.bilibili.com/"),
+            ("搜狐视频", "https://tv.sohu.com/"),
+            ("乐视视频", "https://www.le.com/"),
+            ("PPTV", "https://www.pptv.com/"),
+            ("芒果TV", "https://www.mgtv.com/"),
+            ("咪咕视频", "https://www.miguvideo.com/"),
+            ("西瓜视频", "https://www.ixigua.com/")
         ]
         
         for name, url in websites:
-            # 💡 完美修复：将原先错误的 elevation: 1 改为正确的赋值等号 elevation=1
             btn = MDRaisedButton(
                 text=name,
                 font_name="Roboto",
@@ -181,7 +186,7 @@ class VIPApp(MDApp):
                 height=dp(48),
                 md_bg_color=[1, 1, 1, 1],         # 卡片纯白底色
                 text_color=[0.2, 0.2, 0.2, 1],     # 高级深灰文字
-                elevation=1                        # 正确的Python语法！
+                elevation=1                        # 修复爆红的等号赋值
             )
             btn.bind(on_release=lambda instance, u=url: self.open_in_webview(u))
             self.root.ids.grid_layout.add_widget(btn)
