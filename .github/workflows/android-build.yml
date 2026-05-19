@@ -36,7 +36,7 @@ jobs:
         run: |
           export PATH="$HOME/.local/bin:$PATH"
           if [ ! -f buildozer.spec ]; then echo "buildozer.spec not found"; exit 1; fi
-          buildozer android debug >/tmp/buildozer.log 2>&1 || (tail -n 200 /tmp/buildozer.log && exit 1)
+          buildozer android debug >/tmp/buildozer.log 2>&1 || (cat /tmp/buildozer.log && exit 1)
           ls -la bin || true
 
       - name: Upload APK artifact
